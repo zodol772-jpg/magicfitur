@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>CPU Gaming Control – MLBB Mode</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  background: #000;
+  color: #00f6ff;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.panel {
+  width: 400px;
+  padding: 20px;
+  border-radius: 16px;
+  border: 2px solid cyan;
+  box-shadow: 0 0 35px cyan;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 18px;
+  text-shadow: 0 0 14px cyan;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.switch {
+  width: 54px;
+  height: 28px;
+  background: #222;
+  border-radius: 20px;
+  position: relative;
+  cursor: pointer;
+}
+
+.switch::before {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: cyan;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: 0.3s;
+}
+
+.switch.active {
+  background: #00bcd4;
+}
+
+.switch.active::before {
+  transform: translateX(26px);
+}
+
+.bar {
+  margin-top: 16px;
+  height: 14px;
+  background: #111;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  width: 75%;
+  background: linear-gradient(90deg, cyan, blue);
+  transition: width 0.4s;
+}
+
+.status {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="panel">
+  <h2>MAGIC FITUR GAMING</h2>
+
+  <div class="row"><span>Cooling CPU</span><div class="switch" id="cooling"></div></div>
+  <div class="row"><span>Optimistic Performance</span><div class="switch" id="optimistic"></div></div>
+  <div class="row"><span>MAX FPS 120</span><div class="switch" id="fps120"></div></div>
+  <div class="row"><span>FPS Stability</span><div class="switch" id="stability"></div></div>
+  <div class="row"><span>Super CPU Dingin</span><div class="switch" id="superCool"></div></div>
+  <div class="row"><span>MLBB Stability Mode</span><div class="switch" id="mlbb"></div></div>
+
+  <div class="bar"><div class="fill" id="cpuBar"></div></div>
+  <div class="status" id="status">Mode: NORMAL</div>
+</div>
+
+<script>
+const state = {
+  cooling:false,
+  optimistic:false,
+  fps120:false,
+  stability:false,
+  superCool:false,
+  mlbb:false
+};
+
+let maxFPS = 60;
+let frameInterval = 1000 / maxFPS;
+let lastTime = 0;
+
+/* ===== LOAD STATE ===== */
+function loadState(){
+  Object.keys(state).forEach(k=>{
+    const saved = localStorage.getItem("cpu_"+k);
+    if(saved==="1"){
+      state[k]=true;
+      const el=document.getElementById(k);
+      el.classList.add("active");
+    }
+  });
+
+  if(state.fps120){
+    maxFPS=120;
+    frameInterval=1000/maxFPS;
+  }
+
+  updateMode();
+}
+
+/* ===== SAVE STATE ===== */
+function saveState(key,val){
+  localStorage.setItem("cpu_"+key, val ? "1":"0");
+}
+
+/* ===== BIND SWITCH ===== */
+function bind(id){
+  const el=document.getElementById(id);
+  el.onclick=()=>{
+    el.classList.toggle("active");
+    state[id]=el.classList.contains("active");
+    saveState(id,state[id]);
+
+    if(id==="fps120"){
+      maxFPS=state.fps120?120:60;
+      frameInterval=1000/maxFPS;
+    }
+
+    updateMode();
+  }
+}
+
+["cooling","optimistic","fps120","stability","superCool","mlbb"].forEach(bind);
+
+/* ===== MODE LOGIC ===== */
+function updateMode(){
+  const bar=document.getElementById("cpuBar");
+  const status=document.getElementById("status");
+
+  if(state.mlbb){
+    bar.style.width="30%";
+    status.innerText="Mode: MLBB STABLE 120 FPS";
+  } else if(state.superCool){
+    bar.style.width="22%";
+    status.innerText="Mode: SUPER CPU DINGIN";
+  } else if(state.cooling && state.stability && state.optimistic){
+    bar.style.width="35%";
+    status.innerText="Mode: STABLE PERFORMANCE";
+  } else if(state.optimistic){
+    bar.style.width="55%";
+    status.innerText="Mode: OPTIMISTIC PERFORMANCE";
+  } else if(state.cooling){
+    bar.style.width="45%";
+    status.innerText="Mode: COOLING";
+  } else {
+    bar.style.width="75%";
+    status.innerText="Mode: NORMAL";
+  }
+}
+
+/* ===== GAME LOOP ===== */
+function gameLoop(t){
+  if(t-lastTime>=frameInterval){
+    lastTime=t;
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+/* ===== VISIBILITY HANDLING ===== */
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden && (state.stability||state.superCool||state.mlbb)){
+    console.log("Background mode active");
+  }
+});
+
+/* INIT */
+loadState();
+requestAnimationFrame(gameLoop);
+</script>
